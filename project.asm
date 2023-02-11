@@ -24,6 +24,7 @@ sloopcounter dw 0000h
 compering db 0h
 starting_text_and_keybindes db "Hello!, and welcome to the T-REX RUNNER(cursed adition).",10,10,"In this game you are a dinasour(T-REX) that runs in a field full of obstacles that you must avoid to survive.",10,10,"every 100 points the speed of the dinasour will increase so be carefull.",10,10,"to jump you simply press the space button.",10,10,10,"----to start please press space----$"
 
+skip_to_up_down db 0
 up_down_count db 0
 down db 0
 up db 1
@@ -39,9 +40,6 @@ proc starting_message
 	mov ah, 9h
 	mov dx,offset starting_text_and_keybindes
 	int 21h
-	mov ah, 0h
-	int 16h
-	call start_game
 	pop ax
 	pop dx
 	ret
@@ -118,6 +116,7 @@ proc dinsor
 	push si
 	mov cx, 17;17
 paint1:
+	sub [T_REX_y0], 40
 	mov [bloopcountert], cx
 	mov cx, [T_REX_x]
 y_paint1:
@@ -127,10 +126,13 @@ y_paint1:
 	mov ax, 0C01h
 	int 10h
 	dec [T_REX_y]
-	cmp [T_REX_y], 150
+	mov ax, [T_REX_y0]
+	cmp [T_REX_y], ax
 	jg y_paint1
 	inc [T_REX_x]
-	mov [T_REX_y], 190
+	add [T_REX_y0], 40
+	mov ax, [T_REX_y0]
+	mov [T_REX_y], ax
 	mov cx, [bloopcountert]
 	loop paint1
 	mov ax, [T_REX_x0]
@@ -170,10 +172,9 @@ y_paint_o:
 	mov [obstacle1_y], 190
 	mov cx, [bloopcountert]
 	loop paint_o
-	cmp [obstacle1_x], 1
-	je reset
-	add [obstacle1_x], 5
-	add [obstacle1_y], 10
+	cmp [obstacle1_x], 3 ; once we are at beginning of the screen, we should reset the counters
+	jle reset
+	add [obstacle1_x], 3 ; we can control speed by using 1-6 values 
 	jmp end_ol
 reset:
 	mov ax, [obstacle_x0]
@@ -225,15 +226,18 @@ gameloop:
     cmp dl, [prev_time]
     je gameloop
 	mov [prev_time], dl
+	cmp [skip_to_up_down], 1 ; if nothing was pressed - see if we are in the jump process
+	je jump
     call key_pressed ; If no key was pressed, skip input stage
     jz mov_obstacle
 	call key_detecting
-	cmp [compering], 1bh
+	cmp [compering], 1bh ; if esc was pressed - exit the game
 	je exit1
-	cmp [compering], 20h
+	cmp [compering], 20h;  if space was pressed - jump up
 	je jump
 	jmp mov_obstacle
 jump:
+	mov [skip_to_up_down], 1
 	cmp [up], 1
 	je up1
 	cmp [down], 1
@@ -244,7 +248,7 @@ up1:
 	dec [obstacle1_x]
 	call con_game
 	inc [up_down_count]
-	cmp [up_down_count], 10
+	cmp [up_down_count], 20
 	je go_down
 	jmp gameloop
 exit1:
@@ -260,7 +264,7 @@ down1:
 	dec [obstacle1_x]
 	call con_game
 	inc [up_down_count]
-	cmp [up_down_count], 10
+	cmp [up_down_count], 20
 	je go_back_to_normal
 	jmp gameloop
 mov_obstacle:
@@ -268,6 +272,7 @@ mov_obstacle:
 	call con_game
 	jmp gameloop
 go_back_to_normal:
+	mov [skip_to_up_down], 0
 	mov [up_down_count], 0
 	mov [up], 1
 	mov [down], 0
