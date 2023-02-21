@@ -6,9 +6,9 @@ bloopcountert dw 0000h
 sloopcountert dw 0000h
 countert dw 0000h
 
-T_REX_x dw 20
+T_REX_x dw 29
 T_REX_y dw 190
-T_REX_x0 dw 20
+T_REX_x0 dw 29
 T_REX_y0 dw 190
 obstacle1_y dw 190
 obstacle1_x dw 320
@@ -23,7 +23,9 @@ sloopcounter dw 0000h
 
 compering db 0h
 starting_text_and_keybindes db "Hello!, and welcome to the T-REX RUNNER(cursed adition).",10,10,"In this game you are a dinasour(T-REX) that runs in a field full of obstacles that you must avoid to survive.",10,10,"every 100 points the speed of the dinasour will increase so be carefull.",10,10,"to jump you simply press the space button.",10,10,10,"----to start please press space----$"
-
+ending_text_and_keybindes db "You lost, nice try",10,10,"would you like to play again?, if you do please press space else press anything else$"
+new_game1 db 0
+lose db 0
 skip_to_up_down db 0
 up_down_count db 0
 down db 0
@@ -114,7 +116,7 @@ proc dinsor
 	push cx;+6
 	push dx;+8
 	push si
-	mov cx, 17;17
+	mov cx, 15;17
 paint1:
 	sub [T_REX_y0], 40
 	mov [bloopcountert], cx
@@ -207,9 +209,53 @@ proc con_game
 	call obstacle
 	ret
 endp con_game
+proc losecheck
+	push bp
+	mov bp, sp
+	push ax
+	push dx
+	mov ax, [T_REX_x]
+	add ax, 16
+	sub [obstacle1_x], 3
+	cmp ax, [obstacle1_x]
+	je lose_screen
+	jmp cont
+checky:
+	mov ax, [T_REX_y]
+	sub ax, 40
+	cmp [obstacle1_y], ax
+	jle lose_screen
+	jmp cont
+lose_screen:
+	mov ah, 0
+	mov al, 2
+	int 10h
+	mov ah, 9h
+	mov dx,offset ending_text_and_keybindes
+	int 21h
+restart:
+	call key_detecting
+	cmp [compering], 32
+	je new_game
+	mov ax, 4c00h
+	int 21h
+new_game:
+	mov [new_game1], 1
+cont:
+	add [obstacle1_x], 3
+	mov ax, [T_REX_y0]
+	mov [T_REX_y], ax
+	mov ax, [T_REX_x0]
+	mov [T_REX_x], ax
+	pop dx
+	pop ax
+	pop bp
+	ret
+endp losecheck
 start:
 	mov ax, @data
 	mov ds, ax
+	mov [new_game1], 0
 	mov ax, 13h
     int 10h
 	call starting_message
@@ -226,8 +272,9 @@ gameloop:
     cmp dl, [prev_time]
     je gameloop
 	mov [prev_time], dl
-	cmp [skip_to_up_down], 1 ; if nothing was pressed - see if we are in the jump process
-	je jump
+	call losecheck
+	cmp [new_game1], 1
+	je start
     call key_pressed ; If no key was pressed, skip input stage
     jz mov_obstacle
 	call key_detecting
@@ -268,6 +315,8 @@ down1:
 	je go_back_to_normal
 	jmp gameloop
 mov_obstacle:
+	cmp [skip_to_up_down], 1 ; if nothing was pressed - see if we are in the jump process
+	je jump
 	dec [obstacle1_x]
 	call con_game
 	jmp gameloop
