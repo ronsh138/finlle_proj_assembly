@@ -17,13 +17,13 @@ obstacle2_x dw 320
 obstacle_y0 dw 190
 obstacle_x0 dw 320
 prev_time db 0h
-
+score db 0h
 bloopcounter dw 0000h
 sloopcounter dw 0000h
 
 compering db 0h
 starting_text_and_keybindes db "Hello!, and welcome to the T-REX RUNNER(cursed adition).",10,10,"In this game you are a dinasour(T-REX) that runs in a field full of obstacles that you must avoid to survive.",10,10,"every 100 points the speed of the dinasour will increase so be carefull.",10,10,"to jump you simply press the space button.",10,10,10,"----to start please press space----$"
-ending_text_and_keybindes db "You lost, nice try",10,10,"would you like to play again?, if you do please press space else press anything else$"
+ending_text_and_keybindes db "You lost, nice try",10,10,"your score was:",10,10,"would you like to play again?, if you do please press space else press anything else$"
 new_game1 db 0
 lose db 0
 skip_to_up_down db 0
@@ -209,27 +209,30 @@ proc con_game
 	call obstacle
 	ret
 endp con_game
-proc losecheck
+proc losecheck; obstacle1_y == 180,190 == T_REX_y, obstacle1_x, T_REX_x0==29, T_REX_x==44
 	push bp
 	mov bp, sp
 	push ax
 	push dx
-	mov ax, [T_REX_x]
-	add ax, 16
-	sub [obstacle1_x], 3
-	cmp ax, [obstacle1_x]
-	je lose_screen
-	jmp cont
-checky:
 	mov ax, [T_REX_y]
-	sub ax, 40
-	cmp [obstacle1_y], ax
+	cmp ax, 180
+	jg check_x
+	jmp cont
+check_x:
+	mov ax, 45
+	cmp ax, [obstacle1_x]
+	jge check_x2
+	jmp cont
+check_x2:
+	mov ax, 14
+	cmp ax, [obstacle1_x]
 	jle lose_screen
 	jmp cont
 lose_screen:
 	mov ah, 0
 	mov al, 2
 	int 10h
+;	mov cx, [score]
 	mov ah, 9h
 	mov dx,offset ending_text_and_keybindes
 	int 21h
@@ -241,12 +244,16 @@ restart:
 	int 21h
 new_game:
 	mov [new_game1], 1
+	mov ax, [obstacle_x0]
+	mov [obstacle1_x], ax
+	mov ax, [obstacle_y0]
+	mov [obstacle1_y], ax
 cont:
-	add [obstacle1_x], 3
-	mov ax, [T_REX_y0]
-	mov [T_REX_y], ax
-	mov ax, [T_REX_x0]
-	mov [T_REX_x], ax
+;	add [obstacle1_x], 3
+;	mov ax, [T_REX_y0]
+;	mov [T_REX_y], ax
+;	mov ax, [T_REX_x0]
+;	mov [T_REX_x], ax
 	pop dx
 	pop ax
 	pop bp
@@ -271,6 +278,13 @@ gameloop:
     int 21h ; ch=hour cl=minute dh=second dl=1/100 second
     cmp dl, [prev_time]
     je gameloop
+counter1:
+	mov al, dl
+	and al, 10
+	cmp al, 10
+	jne skipcounter
+	inc [score]
+skipcounter:
 	mov [prev_time], dl
 	call losecheck
 	cmp [new_game1], 1
