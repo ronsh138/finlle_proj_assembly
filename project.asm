@@ -17,13 +17,12 @@ obstacle2_x dw 320
 obstacle_y0 dw 190
 obstacle_x0 dw 320
 prev_time db 0h
-score db 0d
 bloopcounter dw 0000h
 sloopcounter dw 0000h
 
 compering db 0h
-starting_text_and_keybindes db "Hello!, and welcome to the T-REX RUNNER(cursed adition).",10,10,"In this game you are a dinasour(T-REX) that runs in a field full of obstacles that you must avoid to survive.",10,10,"every 100 points the speed of the dinasour will increase so be carefull.",10,10,"to jump you simply press the space button.",10,10,10,"----to start please press space----$"
-ending_text_and_keybindes db "You lost, nice try",10,10,"your score was:$"
+starting_text_and_keybindes db "Hello!, and welcome to the T-REX RUNNER(cursed edition).",10,10,"In this game you are a dinasour(T-REX) that runs in a field full of obstacles that you must avoid to survive.",10,10,"this game is suppose to simulate T-REX RUNNER so dont expect it to be the game, this game is suppose to help you learn how to avoid the obstacles and time your jump right",10,10,"to jump you simply press the space button.",10,10,10,"----to start please press space----$"
+ending_text_and_keybindes db "You lost, nice try"
 ending_text_and_keybindes2 db 10,10,"would you like to play again?, if you do please press space else press anything else$"
 new_game1 db 0
 lose db 0
@@ -236,9 +235,6 @@ lose_screen:
 	mov ah, 9h
 	mov dx,offset ending_text_and_keybindes
 	int 21h
-	mov ah, 2h
-	mov dl, [score]
-	int 21h
 	mov ah, 9h
 	mov dx,offset ending_text_and_keybindes2
 	int 21h
@@ -284,58 +280,10 @@ gameloop:
     int 21h ; ch=hour cl=minute dh=second dl=1/100 second
     cmp dl, [prev_time]
     je gameloop
-	jmp counter1
-start1:
-	jmp start
-counter1:
-	mov al, dl
-	and al, 10
-	cmp al, 10
-	je incscore
-	mov al, dl
-	and al, 20
-	cmp al, 20
-	je incscore
-	mov al, dl
-	and al, 30
-	cmp al, 30
-	je incscore
-	mov al, dl
-	and al, 40
-	cmp al, 40
-	je incscore
-	mov al, dl
-	and al, 50
-	cmp al, 50
-	je incscore
-	mov al, dl
-	and al, 60
-	cmp al, 60
-	je incscore
-	mov al, dl
-	and al, 70
-	cmp al, 70
-	je incscore
-	mov al, dl
-	and al, 80
-	cmp al, 80
-	je incscore
-	mov al, dl
-	and al, 90
-	cmp al, 90
-	je incscore
-	mov al, dl
-	and al, 0
-	cmp al, 0
-	je incscore
-	jmp skipcounter
-incscore:
-	inc [score]
-skipcounter:
 	mov [prev_time], dl
 	call losecheck
 	cmp [new_game1], 1
-	je start1
+	je start
     call key_pressed ; If no key was pressed, skip input stage
     jz mov_obstacle
 	call key_detecting
